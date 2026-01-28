@@ -1,4 +1,5 @@
 import { ProductDetail } from '@/features/productDetail';
+import { Profile } from '@/features/profile';
 import { AuthGuard, GuestGuard } from '@guards/index';
 import { AuthLayout, DashboardLayout, MainLayout } from '@layouts/index';
 import { AboutPage } from '@pages/about';
@@ -32,7 +33,16 @@ export const router = createBrowserRouter([
       },
     ],
   },
-
+  {
+    path: '/profile',
+    element: <MainLayout />,
+    children: [
+      {
+        index: true,
+        element: <Profile />,
+      },
+    ],
+  },
 
   // Auth Routes (Guest Only - redirect to dashboard if logged in)
   {
