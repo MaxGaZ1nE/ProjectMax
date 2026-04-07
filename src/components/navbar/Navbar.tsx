@@ -19,6 +19,9 @@ const Navbar: FC = () => {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const cartCount = useAppSelector((state) =>
+  state.cart.items.reduce((sum, item) => sum + item.qty, 0)
+);
   const { t } = useTranslation();
 
   const handleLogout = () => {
@@ -77,7 +80,15 @@ const Navbar: FC = () => {
           <Row gap="sm" align="center">
             <LanguageSwitcher />
             <ThemeToggle />
+              <Link to="/cart" className="relative inline-flex items-center justify-center px-2">
+                <span className="text-white text-xl leading-none">🛒
 
+                </span>  {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">
+                  {cartCount}
+                </span>
+  )}
+</Link>
             {isAuthenticated ? (
               <>
                 {user && (

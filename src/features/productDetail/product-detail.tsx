@@ -8,6 +8,8 @@ import { productDetailByProductId } from '@/mockItem/productDetail';
 import type { Shop } from '@/mockItem/shops';
 import productReviews from '@/mockItem/productReviews';
 import { Pagination } from '@components/core/pagination';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '@/slices/cart-slice';
 
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex text-orange-500 text-sm gap-0.5">
@@ -19,6 +21,9 @@ const StarRating = ({ rating }: { rating: number }) => (
 
 const ProductDetail: FC = () => {
   const { id } = useParams();
+
+  console.log('ProductDetail render', id);
+  const dispatch = useDispatch();
   const [qty, setQty] = useState(1);
 
   const product = useMemo(
@@ -278,11 +283,24 @@ const ProductDetail: FC = () => {
             {/* actions row */}
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <button
-                className="sm:flex-1 border border-emerald-700 text-emerald-700 rounded-lg py-3 font-medium hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center justify-center gap-2"
-                type="button"
-              >
-                🛒 เพิ่มไปยังรถเข็น
-              </button>
+  className="sm:flex-1 border border-emerald-700 text-emerald-700 rounded-lg py-3 font-medium hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center justify-center gap-2"
+  type="button"
+  onClick={() => {
+    dispatch(
+      addToCart({
+        id: String(product.id),
+        name: product.name,
+        price: product.price,
+        image: images[0],
+        qty: qty,
+        shopId: product.shopId,
+        shopName: shop?.name ?? 'ไม่ทราบชื่อร้าน',
+      })
+    );
+  }}
+>
+  🛒 เพิ่มไปยังรถเข็น
+</button>
               <button
                 className="sm:flex-1 bg-emerald-700 text-white rounded-lg py-3 font-medium hover:bg-emerald-800"
                 type="button"

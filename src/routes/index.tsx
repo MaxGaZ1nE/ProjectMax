@@ -3,12 +3,13 @@ import { Profile } from '@/features/profile';
 import { AuthGuard, GuestGuard } from '@guards/index';
 import { AuthLayout, DashboardLayout, MainLayout } from '@layouts/index';
 import { AboutPage } from '@pages/about';
-import { LoginPage } from '@pages/auth';
+import { LoginPage, RegisterPage } from '@pages/auth';
 import { BlankPage } from '@pages/blank';
 import { DashboardPage } from '@pages/dashboard';
 import { Error401Page, Error404Page, Error500Page } from '@pages/errors';
 import { HomePage } from '@pages/home';
 import { createBrowserRouter } from 'react-router-dom';
+import CartPage from '@pages/cart/CartPage';
 
 // Router Configuration
 export const router = createBrowserRouter([
@@ -24,6 +25,16 @@ export const router = createBrowserRouter([
     ],
   },
   {
+  path: '/cart',
+  element: <MainLayout />,
+  children: [
+    {
+      index: true,
+      element: <CartPage />,
+    },
+  ],
+},
+  {
     path: '/details/:id',
     element: <MainLayout />,
     children: [
@@ -34,26 +45,30 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/profile',
-    element: <MainLayout />,
-    children: [
-      {
-        index: true,
-        element: <Profile />,
-      },
-    ],
-  },
+  path: '/profile',
+  element: <MainLayout />,
+  children: [
+    {
+      index: true,
+      element: <Profile />,
+    },
+  ],
+},
 
   // Auth Routes (Guest Only - redirect to dashboard if logged in)
   {
-    element: <GuestGuard />,
-    children: [
-      {
-        element: <AuthLayout />,
-        children: [{ path: 'auth/login', element: <LoginPage /> }],
-      },
-    ],
-  },
+  element: <GuestGuard />,
+  children: [
+    {
+      element: <AuthLayout />,
+      children: [
+        { path: 'auth/login', element: <LoginPage /> },
+        { path: 'auth/register', element: <RegisterPage /> },
+        
+      ],
+    },
+  ],
+},
 
   // Protected Routes (Auth Required)
   // {

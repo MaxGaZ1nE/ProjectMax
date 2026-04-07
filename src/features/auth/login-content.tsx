@@ -188,7 +188,7 @@ const LoginContent: FC = () => {
                     </Text>
                     <TextButton
                       size="sm"
-                      onClick={() => navigate('/register')}
+                      onClick={() => navigate('/auth/register')}
                       className="text-[#1a4d3a] dark:text-[#4ade80] hover:underline font-medium"
                     >
                       {t(tokens.auth.register)}
