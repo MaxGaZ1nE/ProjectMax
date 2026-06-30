@@ -102,6 +102,7 @@ export * from './focus-trap';
 export * from './overlay';
 export * from './portal';
 export * from './scroll-area';
+export * from './SellerErrorBoundary';
 export * from './suspense-boundary';
 export * from './virtual-list';
 export * from './visually-hidden';

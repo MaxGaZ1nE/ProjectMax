@@ -184,7 +184,7 @@
   body,
   #root {
     height: 100%;
-    overflow: hidden;
+   
   }
 
   /* Global scrollbar hiding */
@@ -197,3 +197,24 @@
     display: none;
   }
 }
+  /* เพิ่มมิติให้ card ชัดขึ้น */
+  .card {
+    @apply p-8 rounded-xl bg-white border border-neutral-300 shadow-sm;
+  }
+  .card:hover {
+    @apply border-neutral-400 shadow-md transition;
+  }
+
+  /* ปุ่มให้กดง่ายขึ้นและชัดขึ้น */
+  .btn {
+    @apply rounded-lg border px-5 py-3 font-semibold cursor-pointer transition-all duration-200
+           bg-neutral-100 text-neutral-800 border-neutral-300
+           hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+           shadow-sm;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white border-primary-600
+           hover:bg-primary-700 hover:border-primary-700 shadow-sm;
+  }

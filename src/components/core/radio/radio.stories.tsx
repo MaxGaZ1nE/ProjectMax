@@ -84,7 +84,7 @@ export const WithDescription: Story = {
   args: {
     label: 'Standard shipping',
     description: 'Delivery in 5-7 business days',
-    name: 'shipping',
+    name: 'in_delivery',
     value: 'standard',
   },
 };

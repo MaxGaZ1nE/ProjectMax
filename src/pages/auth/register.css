@@ -237,3 +237,62 @@
   font-weight: 900;
   cursor: pointer;
 }
+/* =========================
+   Input readability upgrade
+   ========================= */
+
+/* กล่อง input */
+.reg-input,
+.login-input,
+input.reg-input,
+input.login-input {
+  background: #ffffff !important;
+  color: #111827 !important;           /* ตัวอักษรเข้ม */
+  border: 1px solid #94a3b8 !important; /* ขอบชัดขึ้น */
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 16px;                      /* ตัวอักษรใหญ่ขึ้น */
+  font-weight: 500;
+  line-height: 1.25;
+  outline: none;
+}
+
+/* placeholder ให้เข้มขึ้น */
+.reg-input::placeholder,
+.login-input::placeholder,
+input.reg-input::placeholder,
+input.login-input::placeholder {
+  color: #6b7280 !important;            /* เทาเข้ม อ่านง่าย */
+  opacity: 1 !important;
+}
+
+/* ตอน focus ให้เด่นชัด */
+.reg-input:focus,
+.login-input:focus,
+input.reg-input:focus,
+input.login-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
+/* label ให้อ่านง่ายขึ้น */
+.reg-label,
+.login-label {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* ตัวอักษรในกล่อง (title/step) ให้เข้มขึ้นนิด */
+.reg-title,
+.login-title {
+  color: #0f172a;
+}
+
+/* ปุ่มให้ตัวหนังสือชัด */
+.reg-btn,
+.login-btn {
+  font-size: 16px;
+  font-weight: 700;
+}

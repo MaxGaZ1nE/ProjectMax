@@ -7,25 +7,17 @@ import { Footer } from '@/components/footer';
 
 const MainLayout: FC = () => {
   return (
-    <CustomScrollbar maxHeight="100vh" autoHide={false} forceVisible="y">
+   <CustomScrollbar autoHide={false} forceVisible="y" style={{ height: '100vh' }}>
       <Column className="min-h-screen bg-neutral-50 dark:bg-bg-dark">
-      {/* Header */}
-      <Navbar />
-
-      {/* Main Content */}
-      <main >
-        <Container size="2xl" className="py-8">
-          <Outlet />
-        </Container>
-      </main>
-
-      {/* Footer */}
-      <Footer />
+        <Navbar />
+        <main>
+          <Container size="2xl" className="py-8">
+            <Outlet />
+          </Container>
+        </main>
+        <Footer />
       </Column>
     </CustomScrollbar>
-
-
-
   );
 };
 

@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
         '@stores': path.resolve(__dirname, './src/stores'),
         '@slices': path.resolve(__dirname, './src/slices'),
         '@api': path.resolve(__dirname, './src/api'),
+        '@services': path.resolve(__dirname, './src/services'),
         '@utils': path.resolve(__dirname, './src/utils'),
         '@app-types': path.resolve(__dirname, './src/types'),
         '@locales': path.resolve(__dirname, './src/locales'),
@@ -31,12 +32,11 @@ export default defineConfig(({ mode }) => {
         '@libs': path.resolve(__dirname, './src/libs'),
         '@adapters': path.resolve(__dirname, './src/adapters'),
         '@routes': path.resolve(__dirname, './src/routes'),
-        '@services': path.resolve(__dirname, './src/services'),
       },
     },
     server: {
       host: true,
-      port: 5173,
+      port: 5175,
       watch: {
         usePolling: true,
       },

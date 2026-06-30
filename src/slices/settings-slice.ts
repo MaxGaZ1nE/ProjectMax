@@ -10,7 +10,7 @@ export interface SettingsState {
 }
 
 const initialState: SettingsState = {
-  theme: 'dark',
+  theme: 'light', // ✅ Default light mode (ignore persisted dark mode)
   language: 'en',
   sidebarCollapsed: false,
 };
@@ -20,7 +20,12 @@ const settingsSlice = createSlice({
   initialState,
   reducers: {
     setTheme: (state, action: PayloadAction<ThemeMode>) => {
-      state.theme = action.payload;
+      // ✅ Never allow dark theme - force light only
+      if (action.payload === 'dark') {
+        state.theme = 'light';
+      } else {
+        state.theme = action.payload;
+      }
     },
     setLanguage: (state, action: PayloadAction<Language>) => {
       state.language = action.payload;

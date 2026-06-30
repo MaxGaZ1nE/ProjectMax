@@ -1,0 +1,158 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAppSelector } from '@stores/index';
+import type { OrderStatus } from '@/slices/order-slice';
+
+const STATUS_TABS: { value: OrderStatus | 'all'; label: string }[] = [
+  { value: 'all', label: 'ทั้งหมด' },
+  { value: 'unpaid', label: 'รอชำระ' },
+  { value: 'to_ship', label: 'รอจัดส่ง' },
+  { value: 'shipping', label: 'กำลังจัดส่ง' },
+  { value: 'delivered', label: 'ส่งสำเร็จ' },
+  { value: 'canceled', label: 'ยกเลิก' },
+];
+
+const statusText = (status: string, paymentStatus?: string) => {
+  if (status === 'unpaid' && paymentStatus === 'pending_verification') return 'รอตรวจสอบสลิป';
+  if (status === 'unpaid') return 'รอชำระ';
+  if (status === 'paid') return 'ชำระแล้ว';
+  if (status === 'to_ship') return 'รอจัดส่ง';
+  if (status === 'shipping') return 'กำลังจัดส่ง';
+  if (status === 'delivered') return 'จัดส่งสำเร็จ';
+  if (status === 'canceled') return 'ยกเลิก';
+  return status;
+};
+
+const statusColor: Record<string, string> = {
+  unpaid: 'bg-amber-100 text-amber-800',
+  paid: 'bg-blue-100 text-blue-700',
+  to_ship: 'bg-blue-100 text-blue-700',
+  shipping: 'bg-indigo-100 text-indigo-700',
+  delivered: 'bg-emerald-100 text-emerald-700',
+  claim: 'bg-orange-100 text-orange-700',
+  canceled: 'bg-red-100 text-red-700',
+};
+
+const formatDate = (iso: string) => {
+  try {
+    return new Date(iso).toLocaleDateString('th-TH', {
+      day: 'numeric', month: 'short', year: '2-digit',
+    });
+  } catch { return iso; }
+};
+
+export default function OrdersPage() {
+  const allOrders = useAppSelector((s) => s.orders.orders);
+  const [tab, setTab] = useState<OrderStatus | 'all'>('all');
+
+  const filtered = tab === 'all'
+    ? allOrders
+    : allOrders.filter((o) => o.status === tab);
+
+  return (
+    <div className="bg-neutral-50 py-10 min-h-[calc(100vh-120px)]">
+      <div className="mx-auto max-w-screen-md px-4 sm:px-6 lg:px-8">
+
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-neutral-900">คำสั่งซื้อของฉัน</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">รายการทั้งหมด {allOrders.length} รายการ</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1.5 overflow-x-auto pb-2 mb-5 scrollbar-hide">
+          {STATUS_TABS.map((t) => {
+            const count = t.value === 'all'
+              ? allOrders.length
+              : allOrders.filter((o) => o.status === t.value).length;
+            return (
+              <button
+                key={t.value}
+                onClick={() => setTab(t.value)}
+                className={[
+                  'flex-shrink-0 text-xs px-3 py-1.5 rounded-full border transition',
+                  tab === t.value
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50',
+                ].join(' ')}
+              >
+                {t.label}{count > 0 ? ` (${count})` : ''}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Empty */}
+        {filtered.length === 0 ? (
+          <div className="card text-center py-14">
+            <div className="text-neutral-400 text-sm">ไม่มีคำสั่งซื้อในหมวดนี้</div>
+            <Link to="/" className="btn btn-primary mt-4 text-sm inline-block">
+              เริ่มช้อปปิ้ง
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((o) => {
+              const paymentStatus = o.checkout?.paymentStatus;
+              const grandTotal = Number(o.grandTotal ?? 0);
+
+              return (
+                <Link
+                  key={o.id}
+                  to={`/orders/${o.id}`}
+                  className="block bg-white border border-neutral-200 rounded-xl overflow-hidden hover:border-neutral-300 hover:shadow-sm transition"
+                >
+                  {/* Top */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200">
+                    <div>
+                      <div className="text-xs font-medium text-neutral-700">{o.shopName}</div>
+                      <div className="text-xs text-neutral-400 mt-0.5">{o.id}</div>
+                    </div>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusColor[o.status] ?? 'bg-neutral-100 text-neutral-600'}`}>
+                      {statusText(o.status, paymentStatus)}
+                    </span>
+                  </div>
+
+                  {/* Items preview */}
+                  <div className="px-4 py-3 divide-y divide-neutral-100">
+                    {o.items.slice(0, 2).map((it) => (
+                      <div key={`${it.id}-${it.unit}`} className="flex items-center gap-3 py-1.5">
+                        {it.image && (
+                          <img src={it.image} alt={it.name}
+                            className="h-9 w-9 rounded-lg object-cover border border-neutral-200 flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-neutral-700 truncate">{it.name}</div>
+                          <div className="text-xs text-neutral-400">{it.weight} {it.unit} × {it.qty}</div>
+                        </div>
+                      </div>
+                    ))}
+                    {o.items.length > 2 && (
+                      <div className="text-xs text-neutral-400 pt-1.5">
+                        +{o.items.length - 2} รายการอื่น
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between px-4 py-2.5 border-t border-neutral-200 bg-neutral-50">
+                    <div className="text-sm">
+                      <span className="text-neutral-500 text-xs">ยอดรวม </span>
+                      <span className="font-semibold text-red-600">฿{grandTotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+                      <span>{formatDate(o.createdAt)}</span>
+                      <span>·</span>
+                      <span>ส่ง {o.checkout.deliveryDate}</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}   

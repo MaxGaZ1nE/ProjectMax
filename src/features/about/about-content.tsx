@@ -63,8 +63,8 @@ const AboutContent: FC = () => {
     setSelectedPokemon(name);
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
   };
 
   const handlePageChange = (page: number) => {

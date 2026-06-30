@@ -4,7 +4,7 @@ import { SearchField } from '@components/core';
 
 interface SearchInputProps {
   value: string;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onChange: (value: string) => void;
   placeholder?: string;
 }
 

@@ -24,7 +24,7 @@ export const WithPrefix: Story = {
   args: {
     label: 'Revenue',
     value: 45231,
-    prefix: '$',
+    prefix: '฿',
   },
 };
 
@@ -42,7 +42,7 @@ export const WithTrend: Story = {
       <Statistic
         label="Sales"
         value={12345}
-        prefix="$"
+        prefix="฿"
         trend={{ value: 12.5, direction: 'up' }}
       />
       <Statistic
@@ -84,7 +84,7 @@ export const Dashboard: Story = {
         <Statistic
           label="Revenue"
           value={89432}
-          prefix="$"
+          prefix="฿"
           trend={{ value: 8, direction: 'up' }}
         />
       </div>

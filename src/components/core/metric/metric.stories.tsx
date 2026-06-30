@@ -55,7 +55,7 @@ export const WithPrefix: Story = {
   args: {
     label: 'Total Sales',
     value: '1,234,567',
-    prefix: '$',
+    prefix: '฿',
   },
 };
 

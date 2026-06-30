@@ -1,12 +1,18 @@
 import type { FC } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination } from 'swiper/modules';
+import { Link } from 'react-router-dom';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
 
+type ImageItem = {
+  src: string;
+  link?: string;
+};
+
 type ImageSliderProps = {
-  images: string[];
+  images: ImageItem[];
   height?: string;
 };
 
@@ -31,14 +37,25 @@ const ImageSlider: FC<ImageSliderProps> = ({
           swiper.autoplay.start();
         }}
       >
-        {images.map((src, index) => (
+        {images.map((item, index) => (
           <SwiperSlide key={index} className="h-full w-full">
-            <img
-              src={src}
-              alt={`slide-${index}`}
-              className="h-full w-full object-cover"
-              draggable={false}
-            />
+            {item.link ? (
+              <Link to={item.link} className="block h-full w-full">
+                <img
+                  src={item.src}
+                  alt={`slide-${index}`}
+                  className="h-full w-full object-cover cursor-pointer"
+                  draggable={false}
+                />
+              </Link>
+            ) : (
+              <img
+                src={item.src}
+                alt={`slide-${index}`}
+                className="h-full w-full object-cover"
+                draggable={false}
+              />
+            )}
           </SwiperSlide>
         ))}
       </Swiper>

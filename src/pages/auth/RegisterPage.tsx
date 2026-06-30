@@ -1,24 +1,49 @@
-import { useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@contexts/AuthContext';
 import './register.css';
 import basket from '@/assets/Logo.png';
 
 type Step = 1 | 2 | 3;
 
-export default function RegisterPage() {
-  const [step, setStep] = useState<Step>(1);
+function setGlobalAuthToken(token: string) {
+  localStorage.setItem('token', token);
+}
 
-  const [username, setUsername] = useState('');
+function extractTokenFromRegisterResponse(res: any): string | null {
+  // รองรับหลายรูปแบบ response ที่พบบ่อย
+  // 1) res.token
+  // 2) res.data.token
+  // 3) res.data.data.token
+  const t =
+    res?.token ||
+    res?.data?.token ||
+    res?.data?.data?.token ||
+    res?.data?.data?.data?.token; // กันกรณีซ้อนอีกชั้น
+
+  return typeof t === 'string' && t.length > 0 ? t : null;
+}
+
+export default function RegisterPage() {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+
+  const [step, setStep] = useState<Step>(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
+  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-    const [fullName, setFullName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const title = useMemo(() => {
     if (step === 1) return { label: 'Step 1', title: 'สมัครสมาชิกใหม่' };
@@ -26,21 +51,124 @@ export default function RegisterPage() {
     return { label: 'Step 3', title: 'ข้อมูลสมัครสมาชิกใหม่' };
   }, [step]);
 
-  const goNext = () => {
+  const goNext = async () => {
     if (step === 1) {
-      if (!username.trim()) return;
-      setStep(2);
-      setTimeout(() => otpRefs.current[0]?.focus(), 50);
+      if (!phone.trim()) {
+        setError('กรุณากรอกเบอร์โทรศัพท์');
+        return;
+      }
+      if (!/^[0-9]{8,}$/.test(phone.trim())) {
+        setError('กรุณากรอกหมายเลขโทรศัพท์อย่างน้อย 8 หลัก');
+        return;
+      }
+
+      // Send OTP to phone
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const { apiClient } = await import('@/services/backend-api').then(m => m.default);
+        const response = await apiClient.post('/auth/send-registration-otp', {
+          phone: phone.trim(),
+        });
+
+        if (response.data?.success) {
+          setError(null);
+          setGeneratedOtp(response.data?.data?.otp || null);
+          setOtp(['', '', '', '', '', '']); // Reset OTP input
+          setStep(2);
+          setTimeout(() => otpRefs.current[0]?.focus(), 50);
+        }
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'ไม่สามารถส่ง OTP ได้';
+        setError(msg);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
+
     if (step === 2) {
       const code = otp.join('');
-      if (code.length !== 6) return;
-      // TODO: ตรวจ OTP จริง
-      // ตอนนี้ให้ผ่านไป Step 3 ไว้ก่อน (คุณจะทำต่อทีหลัง)
-      // setStep(3);
-      setStep(3);
+      if (code.length !== 6) {
+        setError('กรุณากรอก OTP 6 หลัก');
+        return;
+      }
+
+      // Verify OTP
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const { apiClient } = await import('@/services/backend-api').then(m => m.default);
+        const response = await apiClient.post('/auth/verify-registration-otp', {
+          phone: phone.trim(),
+          otp_code: code,
+        });
+
+        if (response.data?.success) {
+          setError(null);
+          setStep(3);
+        }
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'ยืนยัน OTP ไม่สำเร็จ';
+        setError(msg);
+      } finally {
+        setIsLoading(false);
+      }
       return;
+    }
+
+    if (step === 3) {
+      handleRegister();
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!fullName.trim()) return setError('กรุณากรอกชื่อ-นามสกุล');
+    if (!email.trim()) return setError('กรุณากรอก Email');
+    if (!password.trim()) return setError('กรุณากรอกรหัสผ่าน');
+    if (password.length < 6) return setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+    if (password !== confirmPassword) return setError('รหัสผ่านไม่ตรงกัน');
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const firstName = fullName.trim().split(' ')[0] || '';
+      const lastName = fullName.trim().split(' ').slice(1).join(' ');
+
+      // Register and use normalized auth payload from AuthContext
+      const res = await register(
+        email.trim(),
+        phone.trim(),
+        password,
+        firstName,
+        lastName || '',
+        'customer'
+      );
+
+      // Token should already be available from register response
+      let token = extractTokenFromRegisterResponse(res);
+
+      if (!token) {
+        throw new Error('สมัครสำเร็จ แต่ไม่พบ token สำหรับเข้าสู่ระบบอัตโนมัติ');
+      }
+
+      setGlobalAuthToken(token);
+
+      // 3) ไปหน้าใช้งานจริง
+      navigate('/');
+    } catch (err: any) {
+      console.error('REGISTER ERROR:', err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.details ||
+        err?.message ||
+        'สมัครไม่สำเร็จ';
+      setError(String(msg));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -99,15 +227,31 @@ export default function RegisterPage() {
             <div className="reg-title">{title.title}</div>
           </div>
 
+          {error && (
+            <div
+              style={{
+                padding: '12px',
+                marginBottom: '16px',
+                borderRadius: '8px',
+                backgroundColor: '#fee',
+                border: '1px solid #fcc',
+                color: '#c33',
+                fontSize: '14px',
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           {/* STEP 1 */}
           {step === 1 && (
             <div className="reg-form">
-              <label className="reg-label">Phone number/Username *</label>
+              <label className="reg-label">Phone number *</label>
               <input
                 className="reg-input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Phone number/Username *"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Phone number (e.g. 0812345678)"
               />
 
               <button className="reg-btn" type="button" onClick={goNext}>
@@ -120,8 +264,32 @@ export default function RegisterPage() {
           {step === 2 && (
             <div className="reg-form">
               <div className="reg-hint">
-                ระบบส่งรหัส OTP ไปที่ <b>{username}</b>
+                ระบบส่งรหัส OTP ไปที่ <b>{phone}</b>
               </div>
+
+              {generatedOtp && (
+                <div style={{
+                  backgroundColor: '#fff3cd',
+                  border: '2px solid #ffc107',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '16px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                    📱 รหัส OTP สำหรับทดสอบ:
+                  </div>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    color: '#ff6b6b',
+                    letterSpacing: '4px',
+                    fontFamily: 'monospace'
+                  }}>
+                    {generatedOtp}
+                  </div>
+                </div>
+              )}
 
               <label className="reg-label">OTP *</label>
 
@@ -157,71 +325,75 @@ export default function RegisterPage() {
                 ส่งอีกครั้ง
               </button>
 
-              
+              <button type="button" className="reg-linkBtn" onClick={goBack}>
+                ย้อนกลับ
+              </button>
             </div>
           )}
+
           {/* STEP 3 */}
-{step === 3 && (
-  <div className="reg-form">
-    <label className="reg-label">ชื่อ-นามสกุล *</label>
-    <input
-      className="reg-input"
-      value={fullName}
-      onChange={(e) => setFullName(e.target.value)}
-      placeholder="Name lastname"
-    />
+          {step === 3 && (
+            <div className="reg-form">
+              <label className="reg-label">ชื่อ-นามสกุล *</label>
+              <input
+                className="reg-input"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Name lastname"
+              />
 
-    <label className="reg-label">Email *</label>
-    <input
-      className="reg-input"
-      value={email}
-      onChange={(e) => setEmail(e.target.value)}
-      placeholder="example@gmail.com"
-    />
+              <label className="reg-label">Email *</label>
+              <input
+                className="reg-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@gmail.com"
+              />
 
-    <label className="reg-label">Password *</label>
-    <div className="pw-wrap">
-      <input
-        className="reg-input pw-input"
-        type={showPassword ? 'text' : 'password'}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="********"
-      />
-      <button
-        type="button"
-        className="pw-toggle"
-        onClick={() => setShowPassword((v) => !v)}
-        aria-label="Toggle password visibility"
-      >
-        {showPassword ? '🙈' : '👁️'}
-      </button>
-    </div>
+              <label className="reg-label">Password *</label>
+              <div className="pw-wrap">
+                <input
+                  className="reg-input pw-input"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="********"
+                />
+                <button
+                  type="button"
+                  className="pw-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
 
-    <label className="reg-label">Confirm Password *</label>
-    <div className="pw-wrap">
-      <input
-        className="reg-input pw-input"
-        type={showConfirm ? 'text' : 'password'}
-        value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-        placeholder="********"
-      />
-      <button
-        type="button"
-        className="pw-toggle"
-        onClick={() => setShowConfirm((v) => !v)}
-        aria-label="Toggle confirm password visibility"
-      >
-        {showConfirm ? '🙈' : '👁️'}
-      </button>
-    </div>
+              <label className="reg-label">Confirm Password *</label>
+              <div className="pw-wrap">
+                <input
+                  className="reg-input pw-input"
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="********"
+                />
+                <button
+                  type="button"
+                  className="pw-toggle"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  aria-label="Toggle confirm password visibility"
+                >
+                  {showConfirm ? '🙈' : '👁️'}
+                </button>
+              </div>
 
-    <button className="reg-btn" type="button" onClick={() => alert('สมัคร (mock)')}>
-      สมัคร
-    </button>
-  </div>
-)}  
+              <button className="reg-btn" type="button" onClick={goNext} disabled={isLoading}>
+                {isLoading ? 'กำลังสมัคร...' : 'สมัคร'}
+              </button>
+            </div>
+          )}
+
           <div className="reg-links">
             <Link className="reg-link" to="/auth/login">
               เข้าสู่ระบบ
